@@ -5,12 +5,8 @@ WORKDIR /usr/src/app
 COPY package.json ./
 COPY package-lock.json ./
 
-RUN npm install
+RUN npm install --legacy-peer-deps --ignore-scripts
 
 COPY . .
 
-RUN npm run build
-
-EXPOSE 8080
-
-CMD ["node", "dist/server.js"]
+EXPOSE 5173
