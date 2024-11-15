@@ -144,7 +144,7 @@ EOF
 print_message $YELLOW "Agregando variables de ambiente frontend"
 rm $FRONTEND_ENV_DIR
 cat <<EOF >>"$FRONTEND_ENV_DIR"
-echo "VITE_API_PATH=$BACKEND_URL" >>"$FRONTEND_ENV_DIR"
+VITE_API_PATH=$BACKEND_URL
 EOF
 
 npm run start
