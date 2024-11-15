@@ -7,17 +7,17 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Variables
-BACKEND_DIR="backend"
-BACKEND_ENV_DIR="./backend/.env"
-FRONTEND_DIR="frontend"
-FRONTEND_ENV_DIR="./frontend/.env"
-REDIS="redis"
-MONGO_DB="mongodb"
-MONGO_EXPRESS="mongo-express"
+BACKEND_DIR=backend
+BACKEND_ENV_DIR=./backend/.env
+FRONTEND_DIR=frontend
+FRONTEND_ENV_DIR=./frontend/.env
+REDIS=redis
+MONGO_DB=mongodb
+MONGO_EXPRESS=mongo-express
 
 BACKEND_PORT=8080
-MONGODB_URI="mongodb://127.0.0.1/wanderlust"
-REDIS_URL="redis://127.0.0.1:6379"
+MONGODB_URI=mongodb://mongo/wanderlust
+REDIS_URL=redis://redis:6379
 FRONTEND_URL=http://localhost:5173
 BACKEND_URL=http://localhost:8080
 ACCESS_COOKIE_MAXAGE=120000
@@ -79,31 +79,6 @@ check_installed_tools node
 # Instalar dependencias
 npm run installer
 
-# Eliminar contendores
-for CONTAINER_NAME in $REDIS $MONGO_DB $MONGO_EXPRESS; do
-    if [ $(docker ps -q -a --filter "name=$CONTAINER_NAME" 2>/dev/null) ]; then
-        print_message $GREEN "Ya existe el contendor: $CONTAINER_NAME"
-    else
-        print_message $GREEN "Creando contenedor $CONTAINER_NAME"
-        if [ $CONTAINER_NAME == $MONGO_DB ]; then
-            docker run --name mongodb -p 27017:27017 -d mongo:8.0.3-noble
-        elif [ $CONTAINER_NAME == $MONGO_EXPRESS ]; then
-            docker run -d \
-                --name mongo-express \
-                --link mongodb:mongo \
-                -p 8081:8081 \
-                -e ME_CONFIG_MONGODB_URL="mongodb://mongo:27017" \
-                -e ME_CONFIG_OPTIONS_EDITORTHEME="ambiance" \
-                -e ME_CONFIG_BASICAUTH_USERNAME="user" \
-                -e ME_CONFIG_BASICAUTH_PASSWORD="pass" \
-                mongo-express
-            print_message $YELLOW "Auth para mongo express => User: user - password: pass"
-        else
-            docker run -d --name redis -p 6379:6379 redis
-        fi
-    fi
-done
-
 # Instalar typescript globalmente
 if [[ ! -n $(tsc -v) ]]; then
     print_message $GREEN "Instalando typescript globalmente"
@@ -147,4 +122,4 @@ cat <<EOF >>"$FRONTEND_ENV_DIR"
 VITE_API_PATH=$BACKEND_URL
 EOF
 
-npm run start
+docker-compose up

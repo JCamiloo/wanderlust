@@ -2,11 +2,12 @@ FROM node:18.20.4-alpine3.19
 
 WORKDIR /usr/src/app
 
-COPY package.json ./
-COPY package-lock.json ./
+COPY package.json package-lock.json ./
 
-RUN npm install --legacy-peer-deps
+RUN npm install --legacy-peer-deps --ignore-scripts
 
 COPY . .
 
-CMD ["npm", "run", "dev"]
+EXPOSE 5173
+
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]

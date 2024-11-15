@@ -8,3 +8,5 @@ coverage/
 backend/dist
 package-lock.json
 **/logs
+/mongo_data
+/redis_data
