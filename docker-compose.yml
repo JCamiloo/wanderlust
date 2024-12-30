@@ -5,15 +5,55 @@
 # redis
 
 services:
-
+  prometheus:
+    image: prom/prometheus:v2.45.3
+    restart: unless-stopped
+    volumes:
+      - ./prometheus/:/etc/prometheus/
+    command:
+      - --web.enable-remote-write-receiver
+      - --config.file=/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+  node-exporter:
+    image: prom/node-exporter:v1.7.0
+    restart: unless-stopped
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    ports:
+      - 9100:9100
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    restart: unless-stopped
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+    ports:
+      - 9093:9093
+  grafana:
+    image: grafana/grafana:10.4.0
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_BASIC_ENABLED=false
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
   mongo:
     image: mongo
     container_name: mongo
     ports:
       - 27017:27017
     volumes:
-      - mongo_data:/data/db
-
+      - ./mongo_data:/data/db
   mongo-express:
     image: mongo-express
     container_name: mongo-express
@@ -33,34 +73,35 @@ services:
     ports:
       - 6379:6379
     volumes:
-      - redis_data:/data
+      - ./redis_data:/data
 
   front:
-    build: # path to dockerfile 
+    build:
+      # path to dockerfile 
       context: ./frontend
-      dockerfile: ./frontend/Dockerfile
-      
+      dockerfile: ./Dockerfile
+
     container_name: frontend
     ports:
       - 80:5173
-    
+
     depends_on:
       - back
 
   back:
-    build: # path to dockerfile 
+    build:
+      # path to dockerfile 
       context: ./backend
-      dockerfile: ./backend/Dockerfile
-      
+      dockerfile: ./Dockerfile
+
     container_name: backend
     ports:
       - 8080:8080
-    #environment: # investigar si se pueden leer desde los env del back 
+      #environment: # investigar si se pueden leer desde los env del back 
       # - REDIS_HOST=redis
-     # - REDIS_PORT=6379
-     # - MONGO_HOST=mongo
-     # - MONGO_PORT=27017
+      # - REDIS_PORT=6379
+      # - MONGO_HOST=mongo
+      # - MONGO_PORT=27017
     depends_on:
       - mongo
       - redis
-

@@ -1,8 +1,10 @@
+import { Counter } from 'prom-client';
 import Post from '../models/post.js';
 import User from '../models/user.js';
 import { deleteDataFromCache, storeDataInCache } from '../utils/cache-posts.js';
 import { HTTP_STATUS, REDIS_KEYS, RESPONSE_MESSAGES, validCategories } from '../utils/constants.js';
 import { Request, Response, NextFunction } from 'express';
+import { requestErrorCreationHandlingPostsCounter, requestHttpPostsCounter } from '../utils/prometheus-registries/posts.js';
 export const createPostHandler = async (req: Request, res: Response) => {
   try {
     const {
@@ -17,6 +19,7 @@ export const createPostHandler = async (req: Request, res: Response) => {
 
     // Validation - check if all fields are filled
     if (!title || !authorName || !imageLink || !description || !categories) {
+      requestErrorCreationHandlingPostsCounter.labels(req.method, req.path, res.statusCode.toString()).inc();
       return res
         .status(HTTP_STATUS.BAD_REQUEST)
         .json({ message: RESPONSE_MESSAGES.COMMON.REQUIRED_FIELDS });
@@ -25,6 +28,7 @@ export const createPostHandler = async (req: Request, res: Response) => {
     // Validation - check if imageLink is a valid URL
     const imageLinkRegex = /\.(jpg|jpeg|png|webp)$/i;
     if (!imageLinkRegex.test(imageLink)) {
+      requestErrorCreationHandlingPostsCounter.labels(req.method, req.path, res.statusCode.toString()).inc();
       return res
         .status(HTTP_STATUS.BAD_REQUEST)
         .json({ message: RESPONSE_MESSAGES.POSTS.INVALID_IMAGE_URL });
@@ -32,6 +36,7 @@ export const createPostHandler = async (req: Request, res: Response) => {
 
     // Validation - check if categories array has more than 3 items
     if (categories.length > 3) {
+      requestErrorCreationHandlingPostsCounter.labels(req.method, req.path, res.statusCode.toString()).inc();
       return res
         .status(HTTP_STATUS.BAD_REQUEST)
         .json({ message: RESPONSE_MESSAGES.POSTS.MAX_CATEGORIES });
@@ -65,6 +70,7 @@ export const createPostHandler = async (req: Request, res: Response) => {
 
 export const getAllPostsHandler = async (req: Request, res: Response) => {
   try {
+    requestHttpPostsCounter.labels(req.method, req.path, res.statusCode.toString()).inc();
     const posts = await Post.find();
     await storeDataInCache(REDIS_KEYS.ALL_POSTS, posts);
     return res.status(HTTP_STATUS.OK).json(posts);
@@ -75,6 +81,7 @@ export const getAllPostsHandler = async (req: Request, res: Response) => {
 
 export const getFeaturedPostsHandler = async (req: Request, res: Response) => {
   try {
+    requestHttpPostsCounter.labels(req.method, req.path, res.statusCode.toString()).inc();
     const featuredPosts = await Post.find({ isFeaturedPost: true });
     await storeDataInCache(REDIS_KEYS.FEATURED_POSTS, featuredPosts);
     res.status(HTTP_STATUS.OK).json(featuredPosts);
@@ -86,8 +93,10 @@ export const getFeaturedPostsHandler = async (req: Request, res: Response) => {
 export const getPostByCategoryHandler = async (req: Request, res: Response) => {
   const category = req.params.category;
   try {
+    requestHttpPostsCounter.labels(req.method, req.path, res.statusCode.toString()).inc();
     // Validation - check if category is valid
     if (!validCategories.includes(category)) {
+      requestErrorCreationHandlingPostsCounter.labels(req.method, req.path, res.statusCode.toString()).inc();
       return res
         .status(HTTP_STATUS.BAD_REQUEST)
         .json({ message: RESPONSE_MESSAGES.POSTS.INVALID_CATEGORY });
@@ -102,6 +111,7 @@ export const getPostByCategoryHandler = async (req: Request, res: Response) => {
 
 export const getLatestPostsHandler = async (req: Request, res: Response) => {
   try {
+    requestHttpPostsCounter.labels(req.method, req.path, res.statusCode.toString()).inc();
     const latestPosts = await Post.find().sort({ timeOfPost: -1 });
     await storeDataInCache(REDIS_KEYS.LATEST_POSTS, latestPosts);
     res.status(HTTP_STATUS.OK).json(latestPosts);
@@ -112,6 +122,7 @@ export const getLatestPostsHandler = async (req: Request, res: Response) => {
 
 export const getPostByIdHandler = async (req: Request, res: Response) => {
   try {
+    requestHttpPostsCounter.labels(req.method, req.path, res.statusCode.toString()).inc();
     const post = await Post.findById(req.params.id);
 
     // Validation - check if post exists
@@ -127,6 +138,7 @@ export const getPostByIdHandler = async (req: Request, res: Response) => {
 
 export const updatePostHandler = async (req: Request, res: Response) => {
   try {
+    requestHttpPostsCounter.labels(req.method, req.path, res.statusCode.toString()).inc();
     const updatedPost = await Post.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
     });
@@ -147,6 +159,7 @@ export const updatePostHandler = async (req: Request, res: Response) => {
 
 export const deletePostByIdHandler = async (req: Request, res: Response) => {
   try {
+    requestHttpPostsCounter.labels(req.method, req.path, res.statusCode.toString()).inc();
     const post = await Post.findByIdAndDelete(req.params.id);
 
     // Validation - check if post exists
@@ -167,6 +180,7 @@ export const deletePostByIdHandler = async (req: Request, res: Response) => {
 
 export const getRelatedPostsByCategories = async (req: Request, res: Response) => {
   const { categories } = req.query;
+  requestHttpPostsCounter.labels(req.method, req.path, res.statusCode.toString()).inc();
   if (!categories) {
     return res
       .status(HTTP_STATUS.NOT_FOUND)
