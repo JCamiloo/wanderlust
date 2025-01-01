@@ -5,12 +5,20 @@ import express from 'express';
 import authRouter from './routes/auth.js';
 import postsRouter from './routes/posts.js';
 import userRouter from './routes/user.js';
+import metricsRouter from './routes/metrics.js';
 import errorMiddleware from './middlewares/error-middleware.js';
 import passport from './config/passport.js';
 import session from 'express-session';
 import { FRONTEND_URL } from './config/utils.js';
+import swStats from 'swagger-stats';
+import apiSpec from './docs/swagger.json' with { type: 'json' };
+import { collectDefaultMetrics } from 'prom-client';
+import { registry } from './config/metrics.js';
 
 const app = express();
+
+// enable default metrics like CPU usage, memory usage, etc.
+collectDefaultMetrics({ register: registry });
 
 app.use(
   cors({
@@ -26,11 +34,13 @@ app.use(compression());
 app.use(session({ secret: 'secret', resave: false, saveUninitialized: false }));
 app.use(passport.initialize());
 app.use(passport.session());
+app.use(swStats.getMiddleware({ swaggerSpec: apiSpec }));
 
 // API route
 app.use('/api/posts', postsRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/user', userRouter);
+app.use('/metrics', metricsRouter);
 
 app.get('/', (req, res) => {
   res.send('Yay!! Backend of wanderlust app is now accessible');
