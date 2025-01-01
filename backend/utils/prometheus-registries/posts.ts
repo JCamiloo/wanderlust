@@ -1,5 +1,5 @@
-import { Counter } from "prom-client";
-import { registry } from "../../config/metrics";
+import { Counter } from 'prom-client';
+import { registry } from '../../config/metrics.js';
 
 // create a counter to track the number of requests
 export const requestHttpPostsCounter = new Counter({
@@ -7,7 +7,7 @@ export const requestHttpPostsCounter = new Counter({
   help: 'Total number of Post HTTP requests',
   registers: [registry],
   labelNames: ['method', 'path', 'status'],
-})
+});
 
 // create a counter to track the number of requests
 export const requestErrorCreationHandlingPostsCounter = new Counter({
@@ -15,4 +15,4 @@ export const requestErrorCreationHandlingPostsCounter = new Counter({
   help: 'Total number of errors creating posts',
   registers: [registry],
   labelNames: ['method', 'path', 'status'],
-})
+});

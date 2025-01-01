@@ -11,14 +11,14 @@ import passport from './config/passport.js';
 import session from 'express-session';
 import { FRONTEND_URL } from './config/utils.js';
 import swStats from 'swagger-stats';
-import apiSpec from './docs/swagger.json';
+import apiSpec from './docs/swagger.json' with { type: 'json' };
 import { collectDefaultMetrics } from 'prom-client';
 import { registry } from './config/metrics.js';
 
 const app = express();
 
 // enable default metrics like CPU usage, memory usage, etc.
-collectDefaultMetrics({ register: registry })
+collectDefaultMetrics({ register: registry });
 
 app.use(
   cors({
@@ -34,7 +34,7 @@ app.use(compression());
 app.use(session({ secret: 'secret', resave: false, saveUninitialized: false }));
 app.use(passport.initialize());
 app.use(passport.session());
-app.use(swStats.getMiddleware({swaggerSpec:apiSpec}))
+app.use(swStats.getMiddleware({ swaggerSpec: apiSpec }));
 
 // API route
 app.use('/api/posts', postsRouter);
